@@ -1,0 +1,23 @@
+int LEFT_REDLED_PIN = 10;
+int LEFT_GREENLED_PIN = 11;
+
+int RIGHT_REDLED_PIN = 12;
+int RIGHT_GREENLED_PIN = 13;
+
+int LEFT_BUTTON_PIN = 8; 
+int RIGHT_BUTTON_PIN = 9;
+
+void setup() {
+  pinMode(LEFT_REDLED_PIN, OUTPUT);
+  pinMode(LEFT_GREENLED_PIN, OUTPUT);
+  pinMode(RIGHT_REDLED_PIN, OUTPUT);
+  pinMode(RIGHT_GREENLED_PIN, OUTPUT);
+
+  pinMode(LEFT_BUTTON_PIN, INPUT);
+  pinMode(LEFT_BUTTON_PIN, INPUT);
+}
+
+void loop() {
+  
+
+}

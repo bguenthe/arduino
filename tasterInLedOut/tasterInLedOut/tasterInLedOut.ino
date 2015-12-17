@@ -43,7 +43,7 @@ void loop() {
     String ts;
     int mode;
     int pin;
-    if (str == "get_status") {
+    if (str == "button_status") {
       cycle();
       if (tasterStatus == LOW) {
         ts = "FALSE"; 
@@ -51,7 +51,7 @@ void loop() {
         ts = "TRUE";
       }
 
-      String message = "{\"button_status\"" + String(":") + String("\"") + ts + String("\"}");
+      String message = "{\"/arduino/button_status\"" + String(":") + String("\"") + ts + String("\"}");
       Serial.println(message);
     } else if (str == "cycle") {
       cycle();
@@ -71,12 +71,12 @@ void loop() {
   if (tasterStatus == LOW) {
     if (tasterStatus != lastStatus) {
       digitalWrite(ledPins[0], LOW);
-      Serial.println("{\"button\":\"FALSE\"}");
+      Serial.println("{\"/arduino/button_status\":\"FALSE\"}");
     }
   } else {
     if (tasterStatus != lastStatus) {    
       digitalWrite(ledPins[0], HIGH);
-      Serial.println("{\"button\":\"TRUE\"}");
+      Serial.println("{\"/arduino/button_status\":\"TRUE\"}");
     }
   }
   lastStatus = tasterStatus;
