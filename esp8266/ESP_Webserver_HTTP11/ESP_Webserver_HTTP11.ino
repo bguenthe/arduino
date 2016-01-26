@@ -28,6 +28,8 @@ const char* password = "Nismipf01!";
 unsigned long ulReqcount;
 unsigned long ulReconncount;
 
+void WiFiStart();
+
 
 // Create an instance of the server on Port 80
 WiFiServer server(80);

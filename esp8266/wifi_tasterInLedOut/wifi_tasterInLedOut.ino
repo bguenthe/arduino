@@ -8,7 +8,7 @@
 
 const char* ssid = "claube";
 const char* password = "Nismipf01!";
-const char* mqtt_server = "192.168.178.33";
+const char* mqtt_server = "192.168.178.35";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);

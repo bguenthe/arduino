@@ -15,6 +15,7 @@ const char* ssid = "claube";
 const char* password = "Nismipf01!";
 const char* mqtt_server = "192.168.178.35";
 const char* devicename = "wifidevice01";
+String relay_status = "off";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -32,20 +33,27 @@ const float fVerNum = 0.03;
 
 DHT dht(DHTPIN, DHTTYPE, 15);
 
-void publish(String par_topic, String msg = "") {
+void publish(String par_topic, String humidity = "", String temperature = "", String status1 = "" ) {
   String from = "/from/";
   String topic = from + par_topic;
-  StaticJsonBuffer<200> jsonBuffer;
+  StaticJsonBuffer<1024> jsonBuffer;
 
   JsonObject& root = jsonBuffer.createObject();
   root["device"] = devicename;
   root["time"] = 0; // for later use
-  if (msg.length() != 0) { // hier noch den uebergebenen string parsen und json draus machen (wenn möglich)
-    root["msg"] = msg;
+  if (humidity.length() != 0) {
+    root["value"] = humidity;
+  } else if (temperature.length() != 0) {
+    root["value"] = humidity;
+  } else if (status1.length() != 0) {
+    root["value"] = status1;
   }
 
-  char payload[1024];
-  root.printTo(payload, sizeof(payload));
+  int len = root.measureLength();
+  Serial.println(len);
+//  char payload[1024];
+  String payload;
+  root.printTo(payload);
 
   Serial.println(topic);
   Serial.println(payload);
@@ -111,35 +119,38 @@ void callback(const MQTT::Publish& pub) {
 
   // relay-switch
   if (topic == "/to/switch") {
-    Serial.println("in topic");
     String switchvalue = json_root["value"];
     Serial.println(switchvalue);
     if (switchvalue == "on") {
-      Serial.println("in on");
       pinMode(12, OUTPUT);
       digitalWrite(12, 0);
+      relay_status = "on";
+      //publish("switch", "", "", "on");
+      mqttClient.publish("/from/test", relay_status);
     } else {
-      Serial.println("in off");      
       pinMode(12, INPUT);
+      relay_status = "off";
+      //publish("switch", "", "", "off");
+      mqttClient.publish("/from/test", relay_status);
     }
+  } else if (topic == "/to/status") {
+    //publish("switch", "", "", relay_status);
   }
 }
 
 void setup() {
   Serial.begin(115200);
 
-  pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
-  digitalWrite(BUILTIN_LED, 1); // ausschalten mit 1!
-
-  Serial.begin(115200);
-  
   wifi_start();
   
   mqttClient.set_server(mqtt_server, 1883);
   mqttClient.set_callback(callback);
 
   mqtt_start();
-  publish("switch", "off");
+
+  pinMode(12, INPUT);
+  relay_status = "off";
+  publish("switch", "", "", relay_status);
 
   dht.begin();
 }
@@ -170,7 +181,7 @@ void loop() {
     dtostrf(t, 4, 2, msg);
     Serial.print("Publish temparatur: ");
     Serial.println(msg);
-    publish("temperature", msg);
+    publish("temperature", "", msg);
 
     dtostrf(h, 4, 2, msg);
     Serial.print("Publish humidity: ");
