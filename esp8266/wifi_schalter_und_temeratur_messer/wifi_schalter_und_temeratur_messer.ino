@@ -13,13 +13,15 @@
 const char* ssid = "claube";
 const char* password = "Nismipf01!";
 const char* mqtt_server = "192.168.178.35";
-const char* devicename = "wifidevice01";
+const char* devicename = "wifidevice_huzzah";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
 long last_millis = 0;
 char msg[50];
+
+int RELAY_PIN = 12;
 
 // DHT22
 // Version number
@@ -115,29 +117,27 @@ void callback(char* par_topic, byte* par_payload, unsigned int length) {
   if (topic == "/to/switch") {
     const char* switchvalue = root["value"];
     if (switchvalue == "on") {
-      pinMode(12, OUTPUT);
-      digitalWrite(12, 0);
+      pinMode(RELAY_PIN, OUTPUT);
+      digitalWrite(RELAY_PIN, 0);
     } else {
-      pinMode(12, INPUT);
+      pinMode(RELAY_PIN, INPUT);
     }
   }
 }
 
 void setup() {
   Serial.begin(115200);
-
-  pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
-  digitalWrite(BUILTIN_LED, 1); // ausschalten mit 1!
-
-  Serial.begin(115200);
-  
+   
   wifi_start();
   
   mqttClient.setServer(mqtt_server, 1883);
   mqttClient.setCallback(callback);
 
   mqtt_start();
-  publish("switch", "off");
+
+  pinMode(RELAY_PIN, INPUT);
+  relay_status = "off";
+  publish("switch", "", "", relay_status);
 
   dht.begin();
 }
@@ -155,7 +155,7 @@ void loop() {
   mqttClient.loop();
 
   long current_millis = millis();
-  if (current_millis - last_millis > 15000) { // Alle 15 Sekunden
+  if (current_millis - last_millis > 60000) { // Alle 15 Sekunden
     last_millis = current_millis;
     // Reading temperature or humidity takes about 250 milliseconds!
     // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)

@@ -8,26 +8,31 @@ The first release of the library only supports QoS0 and the basic features to ge
 
 This library is an alternative to the [pubsubclient](https://github.com/knolleary/pubsubclient) library by [knolleary](https://github.com/knolleary) which uses a custom protocol implementation.
 
-[Download version 1.8.0 of the library.](https://github.com/256dpi/arduino-mqtt/releases/download/v1.8.0/mqtt.zip)
+[Download version 1.9.3 of the library.](https://github.com/256dpi/arduino-mqtt/releases/download/v1.9.3/mqtt.zip)
 
 *Or even better use the newly available Library Manager in the Arduino IDE.*
+
+## Compatibility
+
+The following examples show how you can use the library with various Arduino compatible hardware:
+
+- [Arduino Yun (MQTTClient)](https://github.com/256dpi/arduino-mqtt/blob/master/examples/ArduinoYun_MQTTClient/ArduinoYun_MQTTClient.ino)
+- [Arduino Yun (YunMQTTClient)](https://github.com/256dpi/arduino-mqtt/blob/master/examples/ArduinoYun_YunMQTTClient/ArduinoYun_YunMQTTClient.ino)
+- [Arduino Ethernet Shield](https://github.com/256dpi/arduino-mqtt/blob/master/examples/ArduinoEthernetShield/ArduinoEthernetShield.ino)
+- [Arduino WiFi Shield](https://github.com/256dpi/arduino-mqtt/blob/master/examples/ArduinoWiFiShield/ArduinoWiFiShield.ino)
+- [Adafruit HUZZAH ESP8266](https://github.com/256dpi/arduino-mqtt/blob/master/examples/AdafruitHuzzahESP8266/AdafruitHuzzahESP8266.ino)
+
+Other shields and boards should work if they also provide a [Client](https://www.arduino.cc/en/Reference/ClientConstructor) based network implementation.
 
 ## Caveats
 
 - The maximum size for packets being published and received is set by default to 128 bytes. To change that value, you need to download the library manually and change the value in the following file: https://github.com/256dpi/arduino-mqtt/blob/master/src/MQTTClient.h#L5.
 
-## Compatibility
-
-This library has been officially tested on the **Arduino Yùn**. Other boards and shields should work, but may need custom initialization of the Client class.
-
-Here is a list of platforms that are supported:
-
-- [Arduino Yùn](https://www.arduino.cc/en/Main/ArduinoBoardYun)
-- [ESP8266](https://github.com/esp8266/Arduino)
+- On the ESP8266 it has been reported that an additional `delay(10);` after `client.loop();` fixes many stability issues with WiFi connections.
 
 ## Example
 
-- [Example using the alternative YunMQTTClient](https://github.com/256dpi/arduino-mqtt/blob/master/examples/YunMQTTClient/YunMQTTClient.ino).
+The following example uses an Arduino Yun and the MQTTClient to connect to shiftr.io. You can check on your device after a successful connection here: <https://shiftr.io/try>.
 
 ```c++
 #include <Bridge.h>
@@ -43,19 +48,29 @@ void setup() {
   Bridge.begin();
   Serial.begin(9600);
   client.begin("broker.shiftr.io", net);
-  
-  Serial.println("connecting...");
-  if (client.connect("arduino", "try", "try")) {
-    Serial.println("connected!");
-    client.subscribe("/example");
-    // client.unsubscribe("/example");
-  } else {
-    Serial.println("not connected!");
+
+  connect();
+}
+
+void connect() {
+  Serial.print("connecting...");
+  while (!client.connect("arduino", "try", "try")) {
+    Serial.print(".");
   }
+
+  Serial.println("\nconnected!");
+
+  client.subscribe("/example");
+  // client.unsubscribe("/example");
 }
 
 void loop() {
   client.loop();
+
+  if(!client.connected()) {
+    connect();
+  }
+
   // publish a message roughly every second.
   if(millis() - lastMillis > 1000) {
     lastMillis = millis();
@@ -77,8 +92,8 @@ void messageReceived(String topic, String payload, char * bytes, unsigned int le
 Initialize the object using the hostname of the broker, the brokers port (default: `1883`) and the underlying Client class for network transport:
 
 ```c++
-void begin(const char * hostname, Client& client);
-void begin(const char * hostname, int port, Client& client);
+boolean begin(const char * hostname, Client& client);
+boolean begin(const char * hostname, int port, Client& client);
 ```
 
 _The special`YunMQTTClient` does not need the `client` parameter._
@@ -106,6 +121,7 @@ void publish(String topic);
 void publish(String topic, String payload);
 void publish(const char * topic, String payload);
 void publish(const char * topic, const char * payload);
+void publish(const char * topic, char * payload, unsigned int length)
 ```
 
 Subscribe to a topic: 

@@ -15,7 +15,7 @@ void setupWiFi()
 {
   WiFi.mode(WIFI_AP);
   // Do a little work to get a unique name. Append the
-  // last two bytes of the MAC (HEX'd) to "Thingâ€�":
+  // last two bytes of the MAC (HEX'd) to "Thing":
   uint8_t mac[WL_MAC_ADDR_LENGTH];
   WiFi.softAPmacAddress(mac);
   String macID = String(mac[WL_MAC_ADDR_LENGTH - 2], HEX) +
@@ -71,7 +71,7 @@ void loop()
   client.flush();
   // Prepare the response. Start with the common header:
   String s = "HTTP/1.1 200 OK\r\n";
-  s += "Contentâ€�Type: text/html\r\n\r\n";
+  s += "ContentÃ¢â‚¬ï¿½Type: text/html\r\n\r\n";
   s += "<!DOCTYPE HTML>\r\n<html>\r\n";
   // If we're setting the LED, print out a message saying we did
   if (val >= 0)
@@ -99,3 +99,4 @@ void loop()
   // The client will actually be disconnected
   // when the function returns and 'client' object is detroyed
 }
+

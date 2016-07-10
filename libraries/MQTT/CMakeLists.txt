@@ -30,7 +30,9 @@ set(SOURCE_FILES
     src/Timer.h
     src/YunMQTTClient.cpp
     src/YunMQTTClient.h
-    examples/MQTTClient/MQTTClient.ino
-    examples/YunMQTTClient/YunMQTTClient.ino)
+    examples/ArduinoYun_MQTTClient/ArduinoYun_MQTTClient.ino
+    examples/ArduinoYun_YunMQTTClient/ArduinoYun_YunMQTTClient.ino)
+
+set(ARDUINO_AVR_YUN 1)
 
 add_executable(arduino_mqtt ${SOURCE_FILES})

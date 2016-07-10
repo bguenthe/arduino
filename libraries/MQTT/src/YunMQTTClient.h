@@ -13,14 +13,14 @@ private:
   Process process;
   const char * hostname;
   int port;
-  const char * willTopic = NULL;
-  const char * willPayload = NULL;
+  const char * willTopic = "";
+  const char * willPayload = "";
   boolean alive = false;
-  int updateBridge();
+  boolean updateBridge();
 public:
   YunMQTTClient();
-  void begin(const char * hostname);
-  void begin(const char * hostname, int port);
+  boolean begin(const char * hostname);
+  boolean begin(const char * hostname, int port);
   void setWill(const char * topic);
   void setWill(const char * topic, const char * payload);
   boolean connect(const char * clientId);
@@ -29,6 +29,7 @@ public:
   void publish(String topic, String payload);
   void publish(const char * topic, String payload);
   void publish(const char * topic, const char * payload);
+  void publish(const char * topic, char * payload, unsigned int length);
   void subscribe(String topic);
   void subscribe(const char * topic);
   void unsubscribe(String topic);

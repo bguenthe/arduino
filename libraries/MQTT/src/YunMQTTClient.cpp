@@ -6,29 +6,25 @@
 
 YunMQTTClient::YunMQTTClient() {}
 
-void YunMQTTClient::begin(const char * hostname) {
-  this->begin(hostname, 1883);
+boolean YunMQTTClient::begin(const char * hostname) {
+  return this->begin(hostname, 1883);
 }
 
-void YunMQTTClient::begin(const char * hostname, int port) {
+boolean YunMQTTClient::begin(const char * hostname, int port) {
   this->hostname = hostname;
   this->port = port;
+
+  return this->updateBridge();
 }
 
-int YunMQTTClient::updateBridge() {
+boolean YunMQTTClient::updateBridge() {
   Process p;
 
   int r1 = p.runShellCommand("mkdir -p /usr/arduino-mqtt");
-  int r2 = p.runShellCommand("wget -N https://raw.githubusercontent.com/256dpi/arduino-mqtt/v1.8.0/yun/mqtt.py --no-check-certificate -P /usr/arduino-mqtt");
-  int r3 = p.runShellCommand("wget -N https://raw.githubusercontent.com/256dpi/arduino-mqtt/v1.8.0/yun/bridge.py --no-check-certificate -P /usr/arduino-mqtt");
+  int r2 = p.runShellCommand("wget -N https://raw.githubusercontent.com/256dpi/arduino-mqtt/v1.9.3/yun/mqtt.py --no-check-certificate -P /usr/arduino-mqtt");
+  int r3 = p.runShellCommand("wget -N https://raw.githubusercontent.com/256dpi/arduino-mqtt/v1.9.3/yun/bridge.py --no-check-certificate -P /usr/arduino-mqtt");
 
-  boolean success = r1 == 0 && r2 == 0 && r3 == 0;
-
-  if(success) {
-    return 2;
-  } else {
-    return 0;
-  }
+  return r1 == 0 && r2 == 0 && r3 == 0;
 }
 
 void YunMQTTClient::setWill(const char * topic) {
@@ -45,13 +41,9 @@ boolean YunMQTTClient::connect(const char * clientId) {
 }
 
 boolean YunMQTTClient::connect(const char * clientId, const char * username, const char * password) {
-  if(this->updateBridge() == 0) {
-    return false;
-  }
-
   this->process.begin("python");
   this->process.addParameter("-u");
-  this->process.addParameter("/usr/mqtt/bridge.py");
+  this->process.addParameter("/usr/arduino-mqtt/bridge.py");
   this->process.runAsynchronously();
   this->process.setTimeout(10000);
 
@@ -59,13 +51,13 @@ boolean YunMQTTClient::connect(const char * clientId, const char * username, con
   this->process.readStringUntil('\n');
 
   // set will if available
-  if(this->willTopic != NULL) {
+  if(strlen(this->willTopic) > 0) {
     this->process.print("w:");
     this->process.print(this->willTopic);
-    if(this->willPayload != NULL) {
-      this->process.print(':');
-      this->process.print(this->willPayload);
-    }
+    this->process.print(':');
+    this->process.print(strlen(this->willPayload));
+    this->process.print(';');
+    this->process.print(this->willPayload);
     this->process.print('\n');
   }
 
@@ -82,18 +74,18 @@ boolean YunMQTTClient::connect(const char * clientId, const char * username, con
     this->process.print(':');
     this->process.print(password);
   }
-  this->process.print('\n');
+  this->process.print(";\n");
 
   // wait for answer
   String ret = this->process.readStringUntil('\n');
-  this->alive = ret.equals("a");
+  this->alive = ret.equals("a;");
 
   if(!this->alive) {
     this->process.close();
     return false;
-  } else {
-    return true;
   }
+
+  return true;
 }
 
 void YunMQTTClient::publish(String topic) {
@@ -109,11 +101,21 @@ void YunMQTTClient::publish(const char * topic, String payload) {
 }
 
 void YunMQTTClient::publish(const char * topic, const char * payload) {
+  this->publish(topic, (char*)payload, strlen(payload));
+}
+
+void YunMQTTClient::publish(const char * topic, char * payload, unsigned int length) {
   // send publish request
   this->process.print("p:");
   this->process.print(topic);
   this->process.print(':');
-  this->process.print(payload);
+  this->process.print(length);
+  this->process.print(';');
+
+  for(int i=0; i<length; i++) {
+    this->process.write(payload[i]);
+  }
+
   this->process.print('\n');
 }
 
@@ -125,7 +127,7 @@ void YunMQTTClient::subscribe(const char * topic) {
   // send subscribe request
   this->process.print("s:");
   this->process.print(topic);
-  this->process.print('\n');
+  this->process.print(";\n");
 }
 
 void YunMQTTClient::unsubscribe(String topic) {
@@ -136,35 +138,44 @@ void YunMQTTClient::unsubscribe(const char * topic) {
   // send unsubscribe request
   this->process.print("u:");
   this->process.print(topic);
-  this->process.print('\n');
+  this->process.print(";\n");
 }
 
 void YunMQTTClient::loop() {
   int av = this->process.available();
   if(av > 0) {
-    String ret = process.readStringUntil('\n');
+    String ret = process.readStringUntil(';');
 
     if(ret.startsWith("m")) {
       int startTopic = 2;
       int endTopic = ret.indexOf(':', startTopic + 1);
-      int startPayload = endTopic + 1;
-      int endPayload = ret.indexOf(':', startPayload + 1);
       String topic = ret.substring(startTopic, endTopic);
-      String payload = ret.substring(startPayload, endPayload);
-      messageReceived(topic, payload, (char*)payload.c_str(), payload.length());
+
+      int startPayloadLength = endTopic + 1;
+      int endPayloadLength = ret.indexOf(':', startPayloadLength + 1);
+      int payloadLength = ret.substring(startPayloadLength, endPayloadLength).toInt();
+
+      char buf[payloadLength+1];
+      process.readBytes(buf, payloadLength);
+      buf[payloadLength] = '\0';
+
+      messageReceived(topic, String(buf), buf, payloadLength);
     } else if(ret.startsWith("e")) {
       this->alive = false;
+      this->process.close();
     }
+
+    process.readStringUntil('\n');
   }
 }
 
 boolean YunMQTTClient::connected() {
-  return this->alive;
+  return this->process.running() && this->alive;
 }
 
 void YunMQTTClient::disconnect() {
   // send disconnect request
-  this->process.print("d\n");
+  this->process.print("d;\n");
 }
 
 #endif //ARDUINO_AVR_YUN

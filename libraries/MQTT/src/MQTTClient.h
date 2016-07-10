@@ -26,8 +26,8 @@ private:
   int port;
 public:
   MQTTClient();
-  void begin(const char * hostname, Client& client);
-  void begin(const char * hostname, int port, Client& client);
+  boolean begin(const char * hostname, Client& client);
+  boolean begin(const char * hostname, int port, Client& client);
   void setWill(const char * topic);
   void setWill(const char * topic, const char * payload);
   boolean connect(const char * clientId);
@@ -36,6 +36,7 @@ public:
   void publish(String topic, String payload);
   void publish(const char * topic, String payload);
   void publish(const char * topic, const char * payload);
+  void publish(const char * topic, char * payload, unsigned int length);
   void subscribe(String topic);
   void subscribe(const char * topic);
   void unsubscribe(String topic);
