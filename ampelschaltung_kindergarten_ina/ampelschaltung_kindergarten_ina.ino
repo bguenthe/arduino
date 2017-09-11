@@ -109,7 +109,6 @@ void loop() {
   rightbouncer.update();
 
   lefttasterstatus = leftbouncer.read();
-  righttasterstatus = rightbouncer.read();
 
   if (lefttasterstatus == HIGH) {
     if ((current_millis - last_wait_button_millis) > wait_button_time) {
